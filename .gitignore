@@ -22,3 +22,4 @@ apfs.*
 !apfs.go
 dyld_shared_cache*
 *.dmg
+vendor/

@@ -460,7 +460,51 @@ func (h *DecmpfsDiskHeader) DecompressFile(r io.ReaderAt, decomp *bufio.Writer, 
 			return fmt.Errorf("failed to write CMP_RSRC_UNCOMPRESSED data: %w", err)
 		}
 	case CMP_ATTR_LZBITMAP:
+		dec := make([]byte, h.UncompressedSize)
+		if n := lzfse.LzBitMapDecompress(h.AttrBytes, dec); n != 0 {
+			return fmt.Errorf("failed to decompress CMP_ATTR_LZBITMAP")
+		}
+		if _, err := decomp.Write(dec); err != nil {
+			return fmt.Errorf("failed to write CMP_ATTR_LZBITMAP data: %w", err)
+		}
 	case CMP_RSRC_LZBITMAP:
+		// same offset array pattern as LZFSE/LZVN
+		var firstOffset uint32
+		if err := binary.Read(rsrc, binary.LittleEndian, &firstOffset); err != nil {
+			return fmt.Errorf("failed to read CMP_RSRC_LZBITMAP first offset: %v", err)
+		}
+		rsrc.Seek(0, io.SeekStart)
+		offsets := make([]uint32, firstOffset/uint32(binary.Size(firstOffset)))
+		if err := binary.Read(rsrc, binary.LittleEndian, &offsets); err != nil {
+			return fmt.Errorf("failed to read CMP_RSRC_LZBITMAP offsets: %v", err)
+		}
+		for idx, off := range offsets {
+			if idx >= len(offsets)-1 {
+				blocks = append(blocks, cmpfRsrcBlock{Offset: off, Size: uint32(buf.Len()) - off})
+				continue
+			}
+			blocks = append(blocks, cmpfRsrcBlock{Offset: off, Size: uint32(offsets[idx+1]) - off})
+		}
+		for _, blk := range blocks {
+			if max < int(blk.Size) {
+				max = int(blk.Size)
+			}
+		}
+		buff = make([]byte, 0, max)
+		for idx := 0; idx < len(blocks); idx++ {
+			rsrc.Seek(int64(blocks[idx].Offset), io.SeekStart)
+			buff = buff[:blocks[idx].Size]
+			if err := binary.Read(rsrc, binary.LittleEndian, &buff); err != nil {
+				return fmt.Errorf("failed to read CMP_RSRC_LZBITMAP block %d: %v", idx, err)
+			}
+			dec := make([]byte, 0x10000)
+			if n := lzfse.LzBitMapDecompress(buff, dec); n != 0 {
+				return fmt.Errorf("failed to decompress CMP_RSRC_LZBITMAP block %d", idx)
+			}
+			if _, err := decomp.Write(dec); err != nil {
+				return fmt.Errorf("failed to write CMP_RSRC_LZBITMAP block %d: %w", idx, err)
+			}
+		}
 	default:
 		return fmt.Errorf("unknown or unsupported compression type: %s", h.CompressionType)
 	}
