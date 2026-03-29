@@ -23,6 +23,9 @@ jobs:
       - name: Create completions dir
         run: mkdir -p completions
 
+      - name: Setup Zig Compiler
+        uses: mlugg/setup-zig@v2.2.1
+
       - name: Release
         run: make release
         env:
