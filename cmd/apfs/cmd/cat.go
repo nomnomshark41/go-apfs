@@ -47,7 +47,7 @@ var catCmd = &cobra.Command{
 
 		dmgPath := filepath.Clean(args[0])
 
-		dev, err := dmg.Open(dmgPath, nil)
+		dev, err := dmg.Open(dmgPath, &dmg.Config{DisableCache: true})
 		if err != nil {
 			return err
 		}
