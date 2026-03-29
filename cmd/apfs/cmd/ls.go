@@ -22,62 +22,61 @@ THE SOFTWARE.
 package cmd
 
 import (
-        "path/filepath"
+	"path/filepath"
 
-        "github.com/apex/log"
-        "github.com/blacktop/go-apfs"
-        "github.com/blacktop/go-apfs/pkg/disk"
-        "github.com/blacktop/go-apfs/pkg/disk/dmg"
-        "github.com/spf13/cobra"
+	"github.com/apex/log"
+	"github.com/blacktop/go-apfs"
+	"github.com/blacktop/go-apfs/pkg/disk/dmg"
+	"github.com/spf13/cobra"
 )
 
 var lsCmd = &cobra.Command{
-        Use:   "ls",
-        Short: "🚧 List files in APFS container",
-        Args:  cobra.MinimumNArgs(1),
-        RunE: func(cmd *cobra.Command, args []string) error {
-                if Verbose {
-                        log.SetLevel(log.DebugLevel)
-                }
-                dmgPath := filepath.Clean(args[0])
+	Use:   "ls",
+	Short: "🚧 List files in APFS container",
+	Args:  cobra.MinimumNArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if Verbose {
+			log.SetLevel(log.DebugLevel)
+		}
+		dmgPath := filepath.Clean(args[0])
 
-                var a *apfs.APFS
+		var a *apfs.APFS
 
-                if isRawAPFS(dmgPath) {
-                        dev, err := disk.Open(dmgPath)
-                        if err != nil {
-                                return err
-                        }
-                        defer dev.Close()
-                        a, err = apfs.NewAPFS(dev)
-                        if err != nil {
-                                return err
-                        }
-                } else {
-                        dev, err := dmg.Open(dmgPath, &dmg.Config{DisableCache: true})
-                        if err != nil {
-                                return err
-                        }
-                        defer dev.Close()
-                        a, err = apfs.NewAPFS(dev)
-                        if err != nil {
-                                return err
-                        }
-                }
+		if isRawAPFS(dmgPath) {
+			dev, err := openRawAPFS(dmgPath)
+			if err != nil {
+				return err
+			}
+			defer dev.Close()
+			a, err = apfs.NewAPFS(dev)
+			if err != nil {
+				return err
+			}
+		} else {
+			dev, err := dmg.Open(dmgPath, &dmg.Config{DisableCache: true})
+			if err != nil {
+				return err
+			}
+			defer dev.Close()
+			a, err = apfs.NewAPFS(dev)
+			if err != nil {
+				return err
+			}
+		}
 
-                if len(args) > 1 {
-                        if err := a.List(args[1]); err != nil {
-                                return err
-                        }
-                } else {
-                        if err := a.List("/"); err != nil {
-                                return err
-                        }
-                }
-                return nil
-        },
+		if len(args) > 1 {
+			if err := a.List(args[1]); err != nil {
+				return err
+			}
+		} else {
+			if err := a.List("/"); err != nil {
+				return err
+			}
+		}
+		return nil
+	},
 }
 
 func init() {
-        rootCmd.AddCommand(lsCmd)
+	rootCmd.AddCommand(lsCmd)
 }
