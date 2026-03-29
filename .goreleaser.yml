@@ -107,9 +107,7 @@ archives:
       - completions/*
 checksum:
   name_template: "checksums.txt"
-  disable: false
-signs:
-  - artifacts: checksum
+  disable: fals
 brews:
   - name: apfs
     repository:
