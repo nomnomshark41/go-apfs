@@ -73,6 +73,16 @@ func NewAPFS(dev disk.Device) (*APFS, error) {
 	a.dev = dev
 	a.r = dev
 
+	// pre-read block size from superblock before parsing
+	{
+		bsBuf := make([]byte, 40)
+		if _, err := a.r.ReadAt(bsBuf, 0); err == nil {
+			bs := binary.LittleEndian.Uint32(bsBuf[36:40])
+			if bs >= uint32(types.NX_MINIMUM_BLOCK_SIZE) && bs <= uint32(types.NX_MAXIMUM_BLOCK_SIZE) {
+				types.BLOCK_SIZE = uint64(bs)
+			}
+		}
+	}
 	a.nxsb, err = types.ReadObj(a.r, 0)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read APFS container: %w", err)
