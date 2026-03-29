@@ -108,21 +108,6 @@ archives:
 checksum:
   name_template: "checksums.txt"
   disable: false
-brews:
-  - name: apfs
-    repository:
-      owner: blacktop
-      name: homebrew-tap
-    directory: Formula
-    homepage: "https://github.com/blacktop/go-apfs"
-    description: "APFS parser written in pure Go"
-    install: |
-      bin.install "apfs"
-      bash_completion.install "completions/_bash" => "apfs"
-      zsh_completion.install "completions/_zsh" => "_apfs"
-      fish_completion.install "completions/_fish" => "apfs.fish"
-    test: |
-      system "#{bin}/apfs --version"
 nfpms:
   - id: packages
     homepage: https://github.com/blacktop/go-apfs
@@ -159,14 +144,6 @@ nfpms:
       - apk
       - deb
       - rpm
-scoops:
-  - name: apfs
-    repository:
-      owner: blacktop
-      name: scoop-bucket
-    homepage: https://github.com/blacktop/go-apfs
-    description: APFS parser written in pure Go
-    license: Apache 2.0
 changelog:
   sort: asc
   use: github
