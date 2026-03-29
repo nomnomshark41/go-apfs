@@ -20,6 +20,9 @@ jobs:
       - name: Install build deps
         run: make build-deps
 
+      - name: Create completions dir
+        run: mkdir -p completions
+
       - name: Release
         run: make release
         env:
